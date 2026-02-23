@@ -8,8 +8,10 @@ reviewers:
   - @mimowo
   - @amy
   - @PBundyra
+  - @tenzen-y 
 approvers:
   - @mimowo
+  - @tenzen-y 
 
 see-also:
   - "/keps/976-plain-pods"
