@@ -24,16 +24,28 @@ import (
 	kueue "sigs.k8s.io/kueue/apis/kueue/v1beta2"
 )
 
-// TODO: Revisit this, maybe we should extend the check to everything that could potentially impact
-// the workload scheduling (priority, nodeSelectors(when suspended), tolerations and maybe more)
 func comparePodTemplate(a, b *corev1.PodSpec, ignoreTolerations bool) bool {
 	if !ignoreTolerations && !equality.Semantic.DeepEqual(a.Tolerations, b.Tolerations) {
 		return false
 	}
-	if !equality.Semantic.DeepEqual(a.InitContainers, b.InitContainers) {
+	if !compareContainerResources(a.InitContainers, b.InitContainers) {
 		return false
 	}
-	return equality.Semantic.DeepEqual(a.Containers, b.Containers)
+	return compareContainerResources(a.Containers, b.Containers)
+}
+
+// compareContainerResources compares only the quota-relevant fields of containers:
+// the number of containers and their resource requests/limits.
+func compareContainerResources(a, b []corev1.Container) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if !equality.Semantic.DeepEqual(a[i].Resources, b[i].Resources) {
+			return false
+		}
+	}
+	return true
 }
 
 func ComparePodSets(a, b *kueue.PodSet, ignoreTolerations bool) bool {
