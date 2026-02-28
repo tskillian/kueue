@@ -42,3 +42,8 @@ test/e2e/kueueviz/cypress/videos
 
 cmd/experimental/kueue-populator/charts/kueue-populator/charts
 cmd/experimental/kueue-populator/charts/kueue-populator/Chart.lock
+
+# Gas Town (added by gt)
+.runtime/
+.claude/commands/
+.logs/
