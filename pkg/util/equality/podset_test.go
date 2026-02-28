@@ -72,6 +72,60 @@ func TestComparePodSetSlices(t *testing.T) {
 			}).Obj()},
 			wantEquivalent: false,
 		},
+		"different image only": {
+			a:              []kueue.PodSet{*utiltestingapi.MakePodSet("ps", 10).SetMinimumCount(5).Image("img1").Obj()},
+			b:              []kueue.PodSet{*utiltestingapi.MakePodSet("ps", 10).SetMinimumCount(5).Image("img2").Obj()},
+			wantEquivalent: true,
+		},
+		"different env only": {
+			a: []kueue.PodSet{*utiltestingapi.MakePodSet("ps", 10).SetMinimumCount(5).Containers(corev1.Container{
+				Name:  "c",
+				Image: "img",
+				Env:   []corev1.EnvVar{{Name: "KEY", Value: "val1"}},
+				Resources: corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{"cpu": resource.MustParse("1")},
+				},
+			}).Obj()},
+			b: []kueue.PodSet{*utiltestingapi.MakePodSet("ps", 10).SetMinimumCount(5).Containers(corev1.Container{
+				Name:  "c",
+				Image: "img",
+				Env:   []corev1.EnvVar{{Name: "KEY", Value: "val2"}},
+				Resources: corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{"cpu": resource.MustParse("1")},
+				},
+			}).Obj()},
+			wantEquivalent: true,
+		},
+		"different container count": {
+			a: []kueue.PodSet{*utiltestingapi.MakePodSet("ps", 10).SetMinimumCount(5).Containers(
+				corev1.Container{Name: "c1"},
+				corev1.Container{Name: "c2"},
+			).Obj()},
+			b: []kueue.PodSet{*utiltestingapi.MakePodSet("ps", 10).SetMinimumCount(5).Containers(
+				corev1.Container{Name: "c1"},
+			).Obj()},
+			wantEquivalent: false,
+		},
+		"different limits": {
+			a: []kueue.PodSet{*utiltestingapi.MakePodSet("ps", 10).SetMinimumCount(5).Limit("cpu", "2").Obj()},
+			b: []kueue.PodSet{*utiltestingapi.MakePodSet("ps", 10).SetMinimumCount(5).Limit("cpu", "4").Obj()},
+			wantEquivalent: false,
+		},
+		"different init container image only": {
+			a: []kueue.PodSet{*utiltestingapi.MakePodSet("ps", 10).SetMinimumCount(5).InitContainers(corev1.Container{
+				Image: "init1",
+				Resources: corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{"cpu": resource.MustParse("1")},
+				},
+			}).Obj()},
+			b: []kueue.PodSet{*utiltestingapi.MakePodSet("ps", 10).SetMinimumCount(5).InitContainers(corev1.Container{
+				Image: "init2",
+				Resources: corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{"cpu": resource.MustParse("1")},
+				},
+			}).Obj()},
+			wantEquivalent: true,
+		},
 		"different requests in toleration": {
 			a: []kueue.PodSet{*utiltestingapi.MakePodSet("ps", 10).SetMinimumCount(5).Toleration(corev1.Toleration{
 				Key:      "instance",
