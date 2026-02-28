@@ -136,6 +136,91 @@ func TestComparePodSetSlices(t *testing.T) {
 			},
 			wantEquivalent: true,
 		},
+		"different container image, same resources": {
+			a: []kueue.PodSet{*utiltestingapi.MakePodSet("ps", 10).SetMinimumCount(5).
+				Image("img1").Request("cpu", "1").Obj()},
+			b: []kueue.PodSet{*utiltestingapi.MakePodSet("ps", 10).SetMinimumCount(5).
+				Image("img2").Request("cpu", "1").Obj()},
+			wantEquivalent: true,
+		},
+		"different container count": {
+			a: []kueue.PodSet{{
+				Count: 10,
+				Template: corev1.PodTemplateSpec{
+					Spec: corev1.PodSpec{
+						Containers: []corev1.Container{{Name: "c1"}, {Name: "c2"}},
+					},
+				},
+			}},
+			b: []kueue.PodSet{{
+				Count: 10,
+				Template: corev1.PodTemplateSpec{
+					Spec: corev1.PodSpec{
+						Containers: []corev1.Container{{Name: "c1"}},
+					},
+				},
+			}},
+			wantEquivalent: false,
+		},
+		"different container limits": {
+			a: []kueue.PodSet{*utiltestingapi.MakePodSet("ps", 10).SetMinimumCount(5).
+				Limit("cpu", "2").Obj()},
+			b: []kueue.PodSet{*utiltestingapi.MakePodSet("ps", 10).SetMinimumCount(5).
+				Limit("cpu", "4").Obj()},
+			wantEquivalent: false,
+		},
+		"different init container image, same resources": {
+			a: []kueue.PodSet{*utiltestingapi.MakePodSet("ps", 10).SetMinimumCount(5).InitContainers(corev1.Container{
+				Image: "init-img1",
+				Resources: corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						"cpu": resource.MustParse("1"),
+					},
+				},
+			}).Obj()},
+			b: []kueue.PodSet{*utiltestingapi.MakePodSet("ps", 10).SetMinimumCount(5).InitContainers(corev1.Container{
+				Image: "init-img2",
+				Resources: corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						"cpu": resource.MustParse("1"),
+					},
+				},
+			}).Obj()},
+			wantEquivalent: true,
+		},
+		"different container env, same resources": {
+			a: []kueue.PodSet{{
+				Count: 10,
+				Template: corev1.PodTemplateSpec{
+					Spec: corev1.PodSpec{
+						Containers: []corev1.Container{{
+							Name:  "c1",
+							Image: "img",
+							Env:   []corev1.EnvVar{{Name: "FOO", Value: "bar"}},
+							Resources: corev1.ResourceRequirements{
+								Requests: corev1.ResourceList{"cpu": resource.MustParse("1")},
+							},
+						}},
+					},
+				},
+			}},
+			b: []kueue.PodSet{{
+				Count: 10,
+				Template: corev1.PodTemplateSpec{
+					Spec: corev1.PodSpec{
+						Containers: []corev1.Container{{
+							Name:  "c1",
+							Image: "img",
+							Env:   []corev1.EnvVar{{Name: "FOO", Value: "baz"}},
+							Resources: corev1.ResourceRequirements{
+								Requests: corev1.ResourceList{"cpu": resource.MustParse("1")},
+							},
+						}},
+					},
+				},
+			}},
+			wantEquivalent: true,
+		},
 	}
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
