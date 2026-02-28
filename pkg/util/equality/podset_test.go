@@ -121,6 +121,59 @@ func TestComparePodSetSlices(t *testing.T) {
 			ignoreTolerations: true,
 			wantEquivalent:    true,
 		},
+		"different image is equivalent": {
+			a:              []kueue.PodSet{*utiltestingapi.MakePodSet("ps", 10).SetMinimumCount(5).Image("image:v1").Request("cpu", "1").Obj()},
+			b:              []kueue.PodSet{*utiltestingapi.MakePodSet("ps", 10).SetMinimumCount(5).Image("image:v2").Request("cpu", "1").Obj()},
+			wantEquivalent: true,
+		},
+		"different env is equivalent": {
+			a: []kueue.PodSet{*utiltestingapi.MakePodSet("ps", 10).SetMinimumCount(5).Containers(corev1.Container{
+				Env:   []corev1.EnvVar{{Name: "FOO", Value: "bar"}},
+				Resources: corev1.ResourceRequirements{Requests: corev1.ResourceList{"cpu": resource.MustParse("1")}},
+			}).Obj()},
+			b: []kueue.PodSet{*utiltestingapi.MakePodSet("ps", 10).SetMinimumCount(5).Containers(corev1.Container{
+				Env:   []corev1.EnvVar{{Name: "FOO", Value: "baz"}},
+				Resources: corev1.ResourceRequirements{Requests: corev1.ResourceList{"cpu": resource.MustParse("1")}},
+			}).Obj()},
+			wantEquivalent: true,
+		},
+		"different container count": {
+			a: []kueue.PodSet{*utiltestingapi.MakePodSet("ps", 10).SetMinimumCount(5).Containers(
+				corev1.Container{Resources: corev1.ResourceRequirements{Requests: corev1.ResourceList{"cpu": resource.MustParse("1")}}},
+			).Obj()},
+			b: []kueue.PodSet{*utiltestingapi.MakePodSet("ps", 10).SetMinimumCount(5).Containers(
+				corev1.Container{Resources: corev1.ResourceRequirements{Requests: corev1.ResourceList{"cpu": resource.MustParse("1")}}},
+				corev1.Container{Resources: corev1.ResourceRequirements{Requests: corev1.ResourceList{"cpu": resource.MustParse("1")}}},
+			).Obj()},
+			wantEquivalent: false,
+		},
+		"different limits": {
+			a: []kueue.PodSet{*utiltestingapi.MakePodSet("ps", 10).SetMinimumCount(5).Limit("cpu", "2").Obj()},
+			b: []kueue.PodSet{*utiltestingapi.MakePodSet("ps", 10).SetMinimumCount(5).Limit("cpu", "4").Obj()},
+			wantEquivalent: false,
+		},
+		"different init container image is equivalent": {
+			a: []kueue.PodSet{*utiltestingapi.MakePodSet("ps", 10).SetMinimumCount(5).InitContainers(corev1.Container{
+				Image:     "init:v1",
+				Resources: corev1.ResourceRequirements{Requests: corev1.ResourceList{"cpu": resource.MustParse("1")}},
+			}).Obj()},
+			b: []kueue.PodSet{*utiltestingapi.MakePodSet("ps", 10).SetMinimumCount(5).InitContainers(corev1.Container{
+				Image:     "init:v2",
+				Resources: corev1.ResourceRequirements{Requests: corev1.ResourceList{"cpu": resource.MustParse("1")}},
+			}).Obj()},
+			wantEquivalent: true,
+		},
+		"different args is equivalent": {
+			a: []kueue.PodSet{*utiltestingapi.MakePodSet("ps", 10).SetMinimumCount(5).Containers(corev1.Container{
+				Args:      []string{"--flag=a"},
+				Resources: corev1.ResourceRequirements{Requests: corev1.ResourceList{"cpu": resource.MustParse("1")}},
+			}).Obj()},
+			b: []kueue.PodSet{*utiltestingapi.MakePodSet("ps", 10).SetMinimumCount(5).Containers(corev1.Container{
+				Args:      []string{"--flag=b"},
+				Resources: corev1.ResourceRequirements{Requests: corev1.ResourceList{"cpu": resource.MustParse("1")}},
+			}).Obj()},
+			wantEquivalent: true,
+		},
 		"different requests in node selector": {
 			a: []kueue.PodSet{
 				*utiltestingapi.MakePodSet("ps", 10).
