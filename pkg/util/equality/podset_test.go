@@ -121,6 +121,53 @@ func TestComparePodSetSlices(t *testing.T) {
 			ignoreTolerations: true,
 			wantEquivalent:    true,
 		},
+		"different image is equivalent": {
+			a: []kueue.PodSet{*utiltestingapi.MakePodSet("ps", 10).SetMinimumCount(5).Image("img1").Obj()},
+			b: []kueue.PodSet{*utiltestingapi.MakePodSet("ps", 10).SetMinimumCount(5).Image("img2").Obj()},
+			wantEquivalent: true,
+		},
+		"different env is equivalent": {
+			a: []kueue.PodSet{*utiltestingapi.MakePodSet("ps", 10).SetMinimumCount(5).Obj()},
+			b: func() []kueue.PodSet {
+				ps := utiltestingapi.MakePodSet("ps", 10).SetMinimumCount(5).Obj()
+				ps.Template.Spec.Containers[0].Env = []corev1.EnvVar{{Name: "FOO", Value: "bar"}}
+				return []kueue.PodSet{*ps}
+			}(),
+			wantEquivalent: true,
+		},
+		"different container count is not equivalent": {
+			a: func() []kueue.PodSet {
+				ps := utiltestingapi.MakePodSet("ps", 10).SetMinimumCount(5).Obj()
+				ps.Template.Spec.Containers = append(ps.Template.Spec.Containers, corev1.Container{Name: "sidecar"})
+				return []kueue.PodSet{*ps}
+			}(),
+			b:              []kueue.PodSet{*utiltestingapi.MakePodSet("ps", 10).SetMinimumCount(5).Obj()},
+			wantEquivalent: false,
+		},
+		"different limits is not equivalent": {
+			a: func() []kueue.PodSet {
+				ps := utiltestingapi.MakePodSet("ps", 10).SetMinimumCount(5).Obj()
+				ps.Template.Spec.Containers[0].Resources.Limits = corev1.ResourceList{"cpu": resource.MustParse("2")}
+				return []kueue.PodSet{*ps}
+			}(),
+			b:              []kueue.PodSet{*utiltestingapi.MakePodSet("ps", 10).SetMinimumCount(5).Obj()},
+			wantEquivalent: false,
+		},
+		"different init container image is equivalent": {
+			a: []kueue.PodSet{*utiltestingapi.MakePodSet("ps", 10).SetMinimumCount(5).InitContainers(corev1.Container{
+				Image: "init1",
+				Resources: corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{"res": resource.MustParse("1")},
+				},
+			}).Obj()},
+			b: []kueue.PodSet{*utiltestingapi.MakePodSet("ps", 10).SetMinimumCount(5).InitContainers(corev1.Container{
+				Image: "init2",
+				Resources: corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{"res": resource.MustParse("1")},
+				},
+			}).Obj()},
+			wantEquivalent: true,
+		},
 		"different requests in node selector": {
 			a: []kueue.PodSet{
 				*utiltestingapi.MakePodSet("ps", 10).
