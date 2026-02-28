@@ -30,10 +30,27 @@ func comparePodTemplate(a, b *corev1.PodSpec, ignoreTolerations bool) bool {
 	if !ignoreTolerations && !equality.Semantic.DeepEqual(a.Tolerations, b.Tolerations) {
 		return false
 	}
-	if !equality.Semantic.DeepEqual(a.InitContainers, b.InitContainers) {
+	if !compareContainersResources(a.InitContainers, b.InitContainers) {
 		return false
 	}
-	return equality.Semantic.DeepEqual(a.Containers, b.Containers)
+	return compareContainersResources(a.Containers, b.Containers)
+}
+
+func compareContainersResources(a, b []corev1.Container) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if !compareContainerResources(a[i].Resources, b[i].Resources) {
+			return false
+		}
+	}
+	return true
+}
+
+func compareContainerResources(a, b corev1.ResourceRequirements) bool {
+	return equality.Semantic.DeepEqual(a.Requests, b.Requests) &&
+		equality.Semantic.DeepEqual(a.Limits, b.Limits)
 }
 
 func ComparePodSets(a, b *kueue.PodSet, ignoreTolerations bool) bool {
