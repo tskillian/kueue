@@ -68,20 +68,16 @@ Ultimately, this behavioral inconsistency between integrations leads to:
 
 ## Proposal
 
-Introduce two strategies for releasing quota when Jobs are terminating (either
-due to eviction or finish):
+Introduce a `FastQuotaRelease` feature gate (Alpha, disabled by default) that
+modifies the Pod integration to release quota as soon as all Pods have a
+`deletionTimestamp`, regardless of whether they are still running. This aligns
+the Pod integration with how the batch/v1 Job integration already behaves,
+since the Kubernetes Job controller does not count terminating pods in
+`status.active`.
 
-- **Fast quota release**: Release quota as soon as all Pods have a
-  `deletionTimestamp`, regardless of whether they are still running. This is
-  how the batch/v1 Job integration already behaves, since the Kubernetes Job
-  controller does not count terminating pods in `status.active`.
-- **Delayed quota release**: Release quota only after all Pods have reached a
-  terminal phase (`Succeeded` or `Failed`). This is the current Pod integration
-  behavior and preserves strict quota tracking for environments (e.g.,
-  fixed-size clusters without autoscaling) where temporary quota
-  oversubscription is not acceptable. This mode is "opportunistic" — only for
-  integrations which support it by surfacing the required information in their
-  status.
+When the feature gate is disabled, the current behavior is preserved: quota is
+only released after all Pods have reached a terminal phase (`Succeeded` or
+`Failed`).
 
 ### User Stories
 
