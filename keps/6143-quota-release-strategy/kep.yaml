@@ -1,4 +1,4 @@
-title: Pod Integration Fast Quota Release
+title: Quota Release Strategy
 kep-number: 6143
 authors:
   - "@tkillian"
@@ -8,10 +8,10 @@ reviewers:
   - @mimowo
   - @amy
   - @PBundyra
-  - @tenzen-y 
+  - @tenzen-y
 approvers:
   - @mimowo
-  - @tenzen-y 
+  - @tenzen-y
 
 see-also:
   - "/keps/976-plain-pods"
@@ -26,7 +26,6 @@ milestone:
 
 feature-gates:
   - name: FastQuotaRelease
-  - name: DelayedQuotaRelease
 disable-supported: true
 
 metrics:
