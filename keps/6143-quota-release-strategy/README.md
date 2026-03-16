@@ -29,12 +29,13 @@
 
 ## Summary
 
-This KEP aims to standardize the quota release strategy for terminating jobs,
-and to allow administrators to choose between different strategies. Currently,
-the Pod integration holds quota until pods reach a terminal phase, while most
-other integrations (e.g., batch/v1 Job) release quota as soon as pods begin
-terminating. This inconsistency leads to unnecessarily delayed admission and
-serialized preemption for Pod workloads.
+This KEP aims to standardize the quota release strategy for terminating jobs.
+Currently, the Pod integration holds quota until pods reach a terminal phase,
+while most other integrations (e.g., batch/v1 Job) release quota as soon as
+pods begin terminating. This inconsistency leads to unnecessarily delayed
+admission and serialized preemption for Pod workloads. As a first step, this
+KEP introduces a `FastQuotaRelease` feature gate for the Pod integration to
+align it with the existing Job integration behavior.
 
 ## Motivation
 
@@ -56,10 +57,9 @@ Ultimately, this behavioral inconsistency between integrations leads to:
 
 ### Goals
 
-- Standardize quota release behavior across integrations by introducing a
-  `FastQuotaRelease` feature gate (Alpha, disabled by default) that releases
-  quota as soon as all Pods have a `deletionTimestamp`, aligning with current
-  Job integration behavior.
+- Align the Pod integration's quota release behavior with the Job integration
+  by introducing a `FastQuotaRelease` feature gate (Alpha, disabled by default)
+  that releases quota as soon as all Pods have a `deletionTimestamp`.
 
 ### Non-Goals
 
@@ -130,27 +130,13 @@ default).
 
 ### Implementation overview
 
-Both strategies delegate to the individual integrations via the `job.IsActive()`
-function.
+The implementation delegates to the Pod integration's `job.IsActive()` function
+in `pkg/controller/jobs/pod/pod_controller.go`.
 
-For the **fast quota release** strategy, integrations answer `IsActive()=false`
-as soon as all Pods have a `deletionTimestamp`. The initial implementation is
-scoped to the Pod integration in `pkg/controller/jobs/pod/pod_controller.go`,
-since other integrations (Job, JobSet, KubeflowJob, TrainJob) already
-effectively implement this behavior by relying on their upstream controller's
-`status.active` field, which does not count terminating pods.
-
-For the **delayed quota release** strategy, integrations answer
-`IsActive()=false` once all Pods are terminal. However, because some Jobs may
-not provide this information in their status, the implementation is
-"opportunistic" and can be extended gradually as integrations implement such
-functionality.
-
-When the `FastQuotaRelease` feature gate is enabled, the Pod integration's
-`IsActive()` method is modified to treat any Pod with a `deletionTimestamp` as
-inactive. When disabled, the existing behavior is preserved: a Pod is only
-considered inactive once it has reached a terminal phase (`Succeeded` or
-`Failed`).
+When the `FastQuotaRelease` feature gate is enabled, the `IsActive()` method is
+modified to treat any Pod with a `deletionTimestamp` as inactive. When disabled,
+the existing behavior is preserved: a Pod is only considered inactive once it
+has reached a terminal phase (`Succeeded` or `Failed`).
 
 No changes are needed to the generic reconciler. The existing flow already
 handles this:
@@ -202,7 +188,8 @@ None required for Alpha.
 #### Beta (v0.18)
 
 - Re-evaluate introducing a Configuration API knob (e.g.,
-  `.scheduling.quotaReleaseStrategy`) to switch between the strategies
+  `.scheduling.quotaReleaseStrategy`) to allow administrators to select a
+  quota release strategy
 - Re-evaluate the enablement of `FastQuotaRelease` by default
 - Address feedback from Alpha users
 
