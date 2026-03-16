@@ -35,7 +35,10 @@ while most other integrations (e.g., batch/v1 Job) release quota as soon as
 pods begin terminating. This inconsistency leads to unnecessarily delayed
 admission and serialized preemption for Pod workloads. As a first step, this
 KEP introduces a `FastQuotaRelease` feature gate for the Pod integration to
-align it with the existing Job integration behavior.
+align it with the existing Job integration behavior. In future releases, this
+work may evolve into a configurable quota release strategy (e.g., a
+Configuration API knob) that allows administrators to select between different
+strategies for all integrations.
 
 ## Motivation
 
@@ -187,11 +190,11 @@ None required for Alpha.
 
 #### Beta (v0.18)
 
-- Re-evaluate introducing a Configuration API knob (e.g.,
-  `.scheduling.quotaReleaseStrategy`) to allow administrators to select a
-  quota release strategy
-- Re-evaluate the enablement of `FastQuotaRelease` by default
 - Address feedback from Alpha users
+- Re-evaluate the enablement of `FastQuotaRelease` by default
+- Based on Alpha experience, evaluate whether a Configuration API knob (e.g.,
+  `.scheduling.quotaReleaseStrategy`) is warranted to allow administrators to
+  select between quota release strategies across all integrations
 
 ## Implementation History
 
@@ -213,6 +216,7 @@ preferred because:
 
 Instead of feature gates, a Configuration API field (e.g.,
 `.scheduling.quotaReleaseStrategy: OnTermination | OnTerminal`) could be
-introduced to allow administrators to select the quota release strategy. This
-approach may be adopted in Beta (v0.18) to replace the feature gate, allowing
-more granular control and avoiding the need for feature gate promotion.
+introduced to allow administrators to select the quota release strategy across
+all integrations. This approach is intentionally deferred to a future release
+to first validate the consistency fix in Alpha and gather user feedback before
+designing a broader configuration surface.
