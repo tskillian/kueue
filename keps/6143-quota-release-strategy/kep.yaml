@@ -25,7 +25,7 @@ milestone:
   stable:
 
 feature-gates:
-  - name: FastQuotaRelease
+  - name: FastQuotaReleaseInPodIntegration
 disable-supported: true
 
 metrics:
