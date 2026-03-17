@@ -103,6 +103,7 @@ within a reasonable amount of time.
 
 ### Risks and Mitigations
 
+#### Node churn could be increased in cluster autoscaling environment.
 **Risk**: Fast quota release could cause an increase in node churn if the
 cluster autoscaler is being used. While pods are pending, the cluster
 autoscaler may trigger scale-up even though pods could be terminating on
@@ -112,6 +113,7 @@ existing nodes.
 integration and other integrations, so it's a well established/understood
 behavior.
 
+#### Discrepancy could occur from actual available quota
 **Risk**: With fast quota release, if a pod gets "stuck" in a terminating
 state, there may be a discrepancy between the amount of quota available and the
 actual resources available on the cluster. In fixed-size clusters where the sum
