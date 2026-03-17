@@ -11,6 +11,8 @@
     - [Story 2: ClusterQueue migration to new clusters](#story-2-clusterqueue-migration-to-new-clusters)
   - [Notes/Constraints/Caveats](#notesconstraintscaveats)
   - [Risks and Mitigations](#risks-and-mitigations)
+    - [Node churn could be increased in cluster autoscaling environment.](#node-churn-could-be-increased-in-cluster-autoscaling-environment)
+    - [Discrepancy could occur from actual available quota](#discrepancy-could-occur-from-actual-available-quota)
 - [Design Details](#design-details)
   - [Implementation overview](#implementation-overview)
   - [Test Plan](#test-plan)
